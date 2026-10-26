@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CloudShield | Secure Cloud Storage</title>
+<style>
+:root{--bg:#0b1220;--panel:#121d31;--panel2:#182640;--text:#edf3ff;--muted:#9fb0ca;--blue:#58a6ff;--green:#4ade80;--red:#f87171}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#08101d,#111e35);font-family:Inter,Segoe UI,Arial,sans-serif;color:var(--text)}
+header{padding:24px 5%;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #25344d;gap:15px;flex-wrap:wrap}
+.brand{font-size:22px;font-weight:800;letter-spacing:.2px}.brand span{color:var(--blue)}.sub{color:var(--muted);font-size:13px;margin-top:5px}
+main{max-width:1200px;margin:28px auto;padding:0 22px}.hero{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:22px}
+h1{font-size:28px;margin:0 0 8px}.muted{color:var(--muted)}.pill{border:1px solid #2b4160;padding:9px 12px;border-radius:999px;color:#b9d9ff;font-size:12px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:18px 0 24px}
+.card{background:rgba(18,29,49,.94);border:1px solid #263954;border-radius:16px;padding:19px;box-shadow:0 12px 28px #0002}.stat-label{color:var(--muted);font-size:13px}.stat-value{font-size:25px;font-weight:750;margin-top:9px}
+.layout{display:grid;grid-template-columns:1.05fr 1.6fr;gap:18px}.card h2{font-size:17px;margin:0 0 15px}.field{display:block;color:#bdcbe0;font-size:13px;margin:14px 0 7px}
+input[type=file],input[type=password]{width:100%;padding:12px;background:#0b1628;border:1px solid #30445f;border-radius:9px;color:var(--text)}
+button,.btn{border:0;background:var(--blue);color:#071425;font-weight:750;padding:10px 13px;border-radius:9px;cursor:pointer;text-decoration:none;display:inline-block;font-size:12px}
+button:hover,.btn:hover{filter:brightness(1.08)}.primary{width:100%;margin-top:16px;padding:13px}
+.note{font-size:12px;line-height:1.55;color:var(--muted);margin-top:14px}
+.flash{padding:12px 14px;border-radius:10px;margin:10px 0 16px;font-size:13px}.success{background:#123927;border:1px solid #226b46}.error{background:#451f2a;border:1px solid #833747}
+.nodes{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}.node{background:#0c1729;border:1px solid #2a3e5a;border-radius:12px;padding:13px}.node strong{display:block;font-size:13px}.node small{display:block;color:var(--muted);margin-top:7px}
+.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;font-size:12px;min-width:620px}th,td{text-align:left;padding:13px 10px;border-bottom:1px solid #293951}th{color:var(--muted);font-weight:600}td{color:#e1eaff}.filename{font-weight:700;max-width:190px;overflow-wrap:anywhere}.actions{display:flex;gap:7px;flex-wrap:wrap}.secondary{background:#243752;color:#d8e7ff}.danger{background:#512431;color:#ffc4cc}.empty{text-align:center;color:var(--muted);padding:35px}
+footer{text-align:center;padding:30px;color:#7e91ae;font-size:12px}
+@media(max-width:850px){.stats{grid-template-columns:repeat(2,1fr)}.layout{grid-template-columns:1fr}.nodes{grid-template-columns:1fr}}
+</style></head>
+<body>
+<header><div><div class="brand">☁ Cloud<span>Shield</span></div><div class="sub">Secure Cloud File Storage & Distributed Storage Management</div></div><div class="pill">● AES-256-GCM · {{ cloud_status }}</div></header>
+<main>
+<div class="hero"><div><h1>Storage Dashboard</h1><div class="muted">Encrypt, distribute, verify and restore your files.</div></div><div class="pill">SHA-256 integrity checks</div></div>
+{% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}{% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}{% endif %}{% endwith %}
+<div class="stats">
+<div class="card"><div class="stat-label">Stored files</div><div class="stat-value">{{ total_files }}</div></div>
+<div class="card"><div class="stat-label">Original data size</div><div class="stat-value">{{ "%.2f"|format(total_bytes/1024) }} <span style="font-size:14px;color:#9fb0ca">KB</span></div></div>
+<div class="card"><div class="stat-label">Distributed nodes</div><div class="stat-value">03</div></div>
+<div class="card"><div class="stat-label">Encryption</div><div class="stat-value" style="font-size:20px">AES-256-GCM</div></div>
+</div>
+<div class="layout">
+<section class="card"><h2>＋ Secure File Upload</h2>
+<form action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data">
+<label class="field">Choose file</label><input type="file" name="file" required>
+<label class="field">Encryption passphrase</label><input type="password" name="passphrase" minlength="8" placeholder="At least 8 characters" required>
+<button class="primary" type="submit">Encrypt & Store File ↗</button>
+</form>
+<div class="note">Your file is encrypted before storage. Keep the passphrase safe. AWS S3 uploads activate when AWS credentials and AWS_S3_BUCKET are configured. CloudFront: {{ cloudfront_domain if cloudfront_domain else "not configured" }}. Local nodes remain available for the demo.</div>
+<div class="note">Cloud storage: <strong>{{ cloud_status }}</strong>{% if cloudfront_domain %}<br>CloudFront domain: {{ cloudfront_domain }}{% endif %}</div><h2 style="margin-top:25px">Distributed Storage Nodes</h2>
+<div class="nodes">{% for node in node_stats %}<div class="node"><strong>◈ {{ node.name }}</strong><small>{{ node.files }} encrypted chunk(s)</small><small>{{ "%.2f"|format(node.bytes/1024) }} KB stored</small><small style="color:#4ade80">● Online</small></div>{% endfor %}</div>
+</section>
+<section class="card"><h2>▤ Stored Files</h2>
+{% if files %}<div class="table-wrap"><table><thead><tr><th>File</th><th>Size</th><th>Chunks</th><th>SHA-256</th><th>Actions</th></tr></thead><tbody>
+{% for f in files %}<tr><td><div class="filename">▧ {{ f.name }}</div><div style="color:#8195b4;margin-top:5px">{{ f.created }}</div></td><td>{{ "%.2f"|format(f.size/1024) }} KB</td><td>{{ f.chunks }}</td><td title="{{ f.checksum }}">{{ f.checksum[:12] }}…</td><td><div class="actions"><a class="btn" href="{{ url_for('download', file_id=f.id) }}">Restore</a><a class="btn secondary" href="{{ url_for('verify', file_id=f.id) }}">Verify</a><form method="post" action="{{ url_for('delete_file', file_id=f.id) }}" onsubmit="return confirm('Delete this file and its chunks?')"><button class="danger" type="submit">Delete</button></form></div></td></tr>{% endfor %}
+</tbody></table></div>{% else %}<div class="empty">☁<p>No files stored yet.</p><span>Choose a file and encrypt it to get started.</span></div>{% endif %}
+</section></div>
+</main><footer>CloudShield Mini Project · Demonstration build · Local simulated distributed storage</footer>
+</body></html>
